@@ -23,11 +23,14 @@ This project implements a classic Minesweeper game with a graphical interface an
 | Get AI Agent suggestion | Click "AI Move" button |
 | Start over | Click "Reset" button |
 
-## Initial Game Board
+## Game Board
 
 When you start a new game, you'll see the initial cell layout:
 
 ![Initial Cells](assets/images/initCells.png)
+
+When you loose, you encounter something like this
+![Initial Cells](assets/images/lost.png)
 
 ## Prerequisites
 - Python 3.x
