@@ -191,7 +191,81 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
-        raise NotImplementedError
+        # 1
+        self.moves_made.add(cell)
+
+        # 2
+        self.mark_safe(cell)
+
+        # 3
+        inBound = lambda x, y: 0 <= x < self.height and y <= self.width
+
+        directions = [
+            (0, 1), (1, 0), (-1, 0), (0, -1),
+            (1, 1), (-1, -1), (-1, 1), (1, -1)
+        ]
+
+        mine_count = count
+        neighbors = set()
+
+        i, j = cell
+        for ci, cj in directions:
+            ni, nj = i + ci, j + cj
+
+            if not inBound(ni, nj):
+                continue
+
+            if (ni, nj) in self.mines:
+                mine_count -= 1
+            elif (ni, nj) not in self.safes:
+                neighbors.add((ni, nj))
+
+            
+        # create the new sentence
+        new_sentence = Sentence(neighbors, mine_count)
+        self.knowledge.append(new_sentence)
+        
+        # 4
+        made_progress = True
+        while made_progress:
+            made_progress = False
+
+            known_safes = set()
+            known_mines = set()
+
+            for sentence in self.knowledge:
+                known_safes.update(sentence.known_safes())
+                known_mines.update(sentence.known_mines())
+
+            # If found any, mark them and set progress to True to loop again
+            if known_safes:
+                made_progress = True
+                for safe in list(known_safes):
+                    self.mark_safe(safe)
+            if known_mines:
+                made_progress = True
+                for mine in list(known_mines):
+                    self.mark_mine(mine)
+
+        # 5
+        for s1 in self.knowledge:
+            for s2 in self.knowledge:
+                if s1 == s2:
+                    continue
+                
+                # s1 is a subset of s2, we can infer a new sentence 
+                # {a, b, c} , {c} then {a, b}
+                if s1.cells.issubset(s2.cells) and len(s1.cells) > 0:
+                    new_cells = s2.cells - s1.cells
+                    new_count = s2.count - s1.count
+                    new_inferred_sentence = Sentence(new_cells, new_count)
+
+                    # Only add if it's not already in our knowledge base
+                    if new_inferred_sentence not in self.knowledge:
+                        self.knowledge.append(new_inferred_sentence)
+                        made_progress = True
+                
+            self.knowledge = [s for s in self.knowledge if s.cells != set()]
 
     def make_safe_move(self):
         """
