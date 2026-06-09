@@ -198,7 +198,7 @@ class MinesweeperAI():
         self.mark_safe(cell)
 
         # 3
-        inBound = lambda x, y: 0 <= x < self.height and y <= self.width
+        inBound = lambda x, y: 0 <= x < self.height and 0 <= y < self.width
 
         directions = [
             (0, 1), (1, 0), (-1, 0), (0, -1),
@@ -247,24 +247,25 @@ class MinesweeperAI():
                 for mine in list(known_mines):
                     self.mark_mine(mine)
 
-        # 5
-        for s1 in self.knowledge:
-            for s2 in self.knowledge:
-                if s1 == s2:
-                    continue
-                
-                # s1 is a subset of s2, we can infer a new sentence 
-                # {a, b, c} , {c} then {a, b}
-                if s1.cells.issubset(s2.cells) and len(s1.cells) > 0:
-                    new_cells = s2.cells - s1.cells
-                    new_count = s2.count - s1.count
-                    new_inferred_sentence = Sentence(new_cells, new_count)
+            # 5
+            new_inferences = []
+            for s1 in self.knowledge:
+                for s2 in self.knowledge:
+                    if s1 == s2:
+                        continue
+                    
+                    # s1 is a subset of s2, we can infer a new sentence 
+                    # {a, b, c} , {c} then {a, b}
+                    if s1.cells.issubset(s2.cells) and len(s1.cells) > 0:
+                        new_cells = s2.cells - s1.cells
+                        new_count = s2.count - s1.count
+                        new_inferred_sentence = Sentence(new_cells, new_count)
 
-                    # Only add if it's not already in our knowledge base
-                    if new_inferred_sentence not in self.knowledge:
-                        self.knowledge.append(new_inferred_sentence)
-                        made_progress = True
-                
+                        # Only add if it's not already in our knowledge base
+                        if new_inferred_sentence not in self.knowledge:
+                            new_inferences.append(new_inferred_sentence)
+                            made_progress = True
+            self.knowledge.extend(new_inferences)
             self.knowledge = [s for s in self.knowledge if s.cells != set()]
 
     def make_safe_move(self):
@@ -276,7 +277,11 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        raise NotImplementedError
+        for cell in self.safes:
+            if cell not in self.moves_made:
+                return cell
+        
+        return None 
 
     def make_random_move(self):
         """
@@ -285,4 +290,18 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        raise NotImplementedError
+        possible_moves = []
+
+        for i in range(self.height):
+            for j in range(self.width):
+                move = (i, j)
+                
+                # 3. Check if the move is valid
+                if move not in self.moves_made and move not in self.mines:
+                    possible_moves.append(move)
+
+        if not possible_moves:
+            return
+    
+        return random.choice(possible_moves)
+        
